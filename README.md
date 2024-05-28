@@ -22,3 +22,10 @@ If you found our paper helpful, please consider citing:
   pages={arXiv--2402},
   year={2024}
 }
+```
+
+## Acknowledgements
+
+Thanks to previous open-sourced repo: 
+* [DeepSpeedExamples](https://github.com/microsoft/DeepSpeedExamples)
+* [KnowLM](https://github.com/zjunlp/KnowLM)
