@@ -28,16 +28,16 @@
 ### Core Linguisitc Region
 > The **'Top 5%'** region on Attention.o and MLP.down.
 <p align="center">
-  <img src="imgs/top0.05-attn.o.gif" alt="Arabic Attention" style="width: 35%; margin-right: 10px;">
-  <img src="imgs/top0.05-mlp.down.gif" alt="Vietnamese Attention" style="width: 35%;">
+  <img src="imgs/top0.05-attn.o.gif" alt="Arabic Attention" style="width: 60%; margin-right: 10px;">
+  <img src="imgs/top0.05-mlp.down.gif" alt="Vietnamese Attention" style="width: 60%;">
 </p>
 
 
 ### Monolingual Regions
 > The **'Arabic'** and **'Vietnamese'** regions on Attention.q.
 <p align="center">
-  <img src="imgs/Arabic-attn.q.gif" alt="Arabic Attention" style="width: 35%; margin-right: 10px;">
-  <img src="imgs/Vietnamese-attn.q.gif" alt="Vietnamese Attention" style="width: 35%;">
+  <img src="imgs/Arabic-attn.q.gif" alt="Arabic Attention" style="width: 60%; margin-right: 10px;">
+  <img src="imgs/Vietnamese-attn.q.gif" alt="Vietnamese Attention" style="width: 60%;">
 </p>
 
 ## Reference
