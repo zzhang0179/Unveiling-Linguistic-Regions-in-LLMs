@@ -29,7 +29,7 @@
 > The **'Top 5%'** region on Attention.o and MLP.down.
 <p align="center">
   <img src="imgs/core_linguistic_vertical.gif" alt="Core Linguistic" 
-  style="width: 75%; ">
+  style="width: 80%; ">
 </p>
 
 
