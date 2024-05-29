@@ -16,7 +16,7 @@
 ## Generation Case
 ### Outlier Dimension Perturbation
 > Here we use ***“Fudan University is located in”*** as prompt.
-<img src="imgs/core-linguistic-output.png" alt="Core-linguistic-output Image" style="width: 80%;">
+<img src="imgs/core-linguistic-output.png" alt="Core-linguistic-output Image" style="width: 65%;">
 <!-- ![](imgs/core-linguistic-output.png) -->
 
 ### Monolingual Regions Removal
@@ -29,7 +29,7 @@
 > The **'Top 5%'** region on Attention.o and MLP.down.
 <p align="center">
   <img src="imgs/core_linguistic_vertical.gif" alt="Core Linguistic" 
-  style="width: 80%; ">
+  style="width: 65%; ">
 </p>
 
 
@@ -37,7 +37,7 @@
 > The **'Arabic'** and **'Vietnamese'** regions on Attention.q.
 <p align="center">
   <img src="imgs/monolingual_vertical.gif" alt="Monolingual" 
-  style="width: 70%; ">
+  style="width: 60%; ">
 </p>
 
 ## Reference
