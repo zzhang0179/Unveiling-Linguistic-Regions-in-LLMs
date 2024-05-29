@@ -25,7 +25,7 @@
 <!-- ![](imgs/monolingual-output.png) -->
 
 ## Regions Visualization
-### Core Linguisitc Region
+### Core Linguistic Region
 > The **'Top 5%'** region on Attention.o and MLP.down.
 <p align="center">
   <img src="imgs/core_linguistic_vertical.gif" alt="Core Linguistic" 
