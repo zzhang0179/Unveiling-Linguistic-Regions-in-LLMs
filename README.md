@@ -31,7 +31,7 @@ DS_BUILD_OPS=1 DS_BUILD_SPARSE_ATTN=0 DS_BUILD_CUTLASS_OPS=0 DS_BUILD_RAGGED_DEV
 <h3 id="1">📖 Data Preprocess</h3>
 <p>
   <h4> Thanks to Open-Sourced Code: </h4>
-  <a href="https://github.com/microsoft/DeepSpeedExamples">
+  <a href="https://github.com/zjunlp/KnowLM/tree/main/pretrain">
     <img src="https://github.com/zjunlp/KnowLM/blob/main/assets/KnowLM.png?raw=true" width="80" height="24" style="vertical-align:middle;">
   </a>
   <a href="https://github.com/zjunlp/KnowLM/tree/main/pretrain" style="vertical-align:middle; margin-left: 10px;">KnowLM-Pretrain</a>
@@ -60,7 +60,7 @@ python preprocess-llama.py \
 ```
 
 
-<h3 id="1">⏳ Training</h3>
+<h3 id="2">⏳ Training</h3>
 <p>
   <h4> Thanks to Open-Sourced Code: </h4>
   <a href="https://github.com/microsoft/DeepSpeedExamples">
