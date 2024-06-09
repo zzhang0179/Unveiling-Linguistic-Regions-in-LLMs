@@ -9,8 +9,8 @@
 <!---
 -->
 * **[2024-05.28]** Accepted by ACL 2024.🎉 The preprint of our paper can be found [here](https://arxiv.org/abs/2402.14700).
-* **[2024-05.30]** We released our data_preprocessed code.
-* **[2024-06.09]** We released our gradient_accumulation code.
+* **[2024-05.30]** We released our data_preprocessing code.
+* **[2024-06.09]** We released our training code.
 
 ## 💻Code Start
 <h3 id="0">🛠️ Environment Configuration</h3>
@@ -105,6 +105,19 @@ deepspeed accumulate_grad_mul_params_on_multi_languages.py  \
     --output_dir $PRETRAIN_OUT \
     &> $PRETRAIN_OUT/training.log
 ```
+
+### 🔍Region Selection
+#### Core Linguistic Region
+```sh
+cd region_selection
+python extract_accumulated_core_linguistic_region.py
+```
+#### Monolingual Region
+```sh
+cd region_selection
+python extract_accumulated_monolingual_region.py
+```
+
 
 ## 🎯Generation Case
 ### Outlier Dimension Perturbation
