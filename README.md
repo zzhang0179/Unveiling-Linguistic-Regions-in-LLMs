@@ -5,10 +5,12 @@
 <img src="imgs/introduction.png" alt="Introduction Image" style="width: 60%;">
 
 
-## :fire: News
+## 🔥 News
 <!---
 -->
-* **[2024-05.28]** Accepted by ACL 2024. The preprint of our paper can be found [here](https://arxiv.org/abs/2402.14700).
+* **[2024-05.28]** Accepted by ACL 2024.🎉 The preprint of our paper can be found [here](https://arxiv.org/abs/2402.14700).
+* **[2024-05.30]** We released our data_preprocessed code.
+* **[2024-06.09]** We released our gradient_accumulation code.
 
 ## 💻Code Start
 <h3 id="0">🛠️ Environment Configuration</h3>
@@ -64,7 +66,7 @@ python preprocess-llama.py \
 <p>
   <h4> Thanks to Open-Sourced Code: </h4>
   <a href="https://github.com/microsoft/DeepSpeedExamples">
-    <img src="https://github.com/microsoft/DeepSpeed/raw/master/docs/assets/images/DeepSpeed_light.svg" width="90">
+    <img src="imgs/deepspeed.png" width="90">
   </a>
   <a href="https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat" style="vertical-align:middle; margin-left: 10px;">DeepSpeed-Chat</a>
 </p>
