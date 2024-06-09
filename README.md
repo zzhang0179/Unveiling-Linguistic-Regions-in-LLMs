@@ -31,7 +31,7 @@ DS_BUILD_OPS=1 DS_BUILD_SPARSE_ATTN=0 DS_BUILD_CUTLASS_OPS=0 DS_BUILD_RAGGED_DEV
 <h3 id="1">📖 Data Preprocess</h3>
 <p>
   <h4> Thanks to Open-Sourced Code: </h4>
-  <a href="https://github.com/zjunlp/KnowLM/tree/main/pretrain">
+  <a href="https://github.com/microsoft/DeepSpeedExamples">
     <img src="https://github.com/zjunlp/KnowLM/blob/main/assets/KnowLM.png?raw=true" width="80" height="24" style="vertical-align:middle;">
   </a>
   <a href="https://github.com/zjunlp/KnowLM/tree/main/pretrain" style="vertical-align:middle; margin-left: 10px;">KnowLM-Pretrain</a>
@@ -60,7 +60,49 @@ python preprocess-llama.py \
 ```
 
 
+<h3 id="1">⏳ Training</h3>
+<p>
+  <h4> Thanks to Open-Sourced Code: </h4>
+  <a href="https://github.com/microsoft/DeepSpeedExamples">
+    <img src="https://github.com/microsoft/DeepSpeed/raw/master/docs/assets/images/DeepSpeed_light.svg" width="90">
+  </a>
+  <a href="https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat" style="vertical-align:middle; margin-left: 10px;">DeepSpeed-Chat</a>
+</p>
 
+#### Gradient Accumulation
+```sh
+cd training/step1_supervised_finetuning
+
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+total_cards=8
+
+PRETRAIN_OUT=$1
+ZERO_STAGE=$2
+
+if [ "$PRETRAIN_OUT" == "" ]; then
+    PRETRAIN_OUT=./default_path_to_save
+fi
+
+mkdir -p $PRETRAIN_OUT
+echo $PRETRAIN_OUT
+
+deepspeed accumulate_grad_mul_params_on_multi_languages.py  \
+    --model_name_or_path path_to_model \
+    --pretrain_train_data_path path_to_preprocessed_data/train \
+    --pretrain_test_data_path path_to_preprocessed_data/test \
+    --max_seq_len 512 \
+    --learning_rate 5e-5 \
+    --weight_decay 0.001 \
+    --total_cards $total_cards \
+    --per_device_train_batch_size 8 \
+    --gradient_accumulation_steps 4 \
+    --per_device_eval_batch_size 16 \
+    --zero_stage 2 \
+    --seed 1234 \
+    --deepspeed \
+    --output_dir $PRETRAIN_OUT \
+    &> $PRETRAIN_OUT/training.log
+```
 
 ## 🎯Generation Case
 ### Outlier Dimension Perturbation
@@ -75,7 +117,7 @@ python preprocess-llama.py \
 
 ## 👓Regions Visualization
 ### Core Linguistic Region
-> The **'Top 5%'** region on Attention.o and MLP.down.
+> The **'Top 5%'** region in Attention.o and MLP.down.
 <p align="center">
   <img src="imgs/core_linguistic_vertical.gif" alt="Core Linguistic" 
   style="width: 65%; ">
@@ -83,7 +125,7 @@ python preprocess-llama.py \
 
 
 ### Monolingual Regions
-> The **'Arabic'** and **'Vietnamese'** regions on Attention.q.
+> The **'Arabic'** and **'Vietnamese'** regions in Attention.q.
 <p align="center">
   <img src="imgs/monolingual_vertical.gif" alt="Monolingual" 
   style="width: 60%; ">
