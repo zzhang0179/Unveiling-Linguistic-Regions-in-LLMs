@@ -17,16 +17,18 @@ mkdir -p $PRETRAIN_OUT
 
 echo $PRETRAIN_OUT
 
-deepspeed accumulate_grad_mul_params_on_multi_languages.py  \
+deepspeed region_freeze_train.py  \
     --model_name_or_path path_to_model \
     --pretrain_train_data_path path_to_preprocessed_data/train \
     --pretrain_test_data_path path_to_preprocessed_data/test \
+    --english_test_data_path path_to_english_data/test \
+    --region_dir path_to_region_freeze \
     --max_seq_len 512 \
     --learning_rate 5e-5 \
     --weight_decay 0.001 \
     --total_cards $total_cards \
-    --per_device_train_batch_size 8 \
-    --gradient_accumulation_steps 4 \
+    --per_device_train_batch_size 2 \
+    --gradient_accumulation_steps 16 \
     --per_device_eval_batch_size 16 \
     --zero_stage 2 \
     --seed 1234 \

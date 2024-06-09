@@ -172,6 +172,10 @@ def parse_args():
                         type=str,
                         default='default_train_path/test',
                         help='Path to the testing data.')
+    parser.add_argument('--english_test_data_path',
+                        type=str,
+                        default='default_english_path/test',
+                        help='Path to the testing data.')
     
     parser.add_argument('--data_split',
                         type=str,
@@ -199,9 +203,17 @@ def parse_args():
         "Path to new pretrained model or model identifier from huggingface.co/models.",
         required=True,
     )
+    parser.add_argument(
+        "--region_dir",
+        type=str,
+        help=
+        "Path to parameter region.",
+        required=True,
+    )
     parser.add_argument("--total_cards",
                         type=int,
                         help="total_cards for distributed training on gpus")
+    
     parser.add_argument(
         "--per_device_train_batch_size",
         type=int,
@@ -354,37 +366,54 @@ def main():
     
     
     train_dataset = data_module['train_dataset']
-    eval_dataset = data_module['eval_dataset']
+    chinese_eval_dataset = data_module['eval_dataset']
     train_data_collator = data_module['train_data_collator']
-    eval_data_collator = data_module['eval_data_collator']
+    chinese_eval_data_collator = data_module['eval_data_collator']
     
     train_batch = train_data_collator([train_dataset[i] for i in range(5)])
     print_rank_0(train_batch,  args.global_rank)
     print_rank_0(tokenizer.decode(train_dataset[0]["input_ids"]),args.global_rank)
     print_rank_0(tokenizer.decode(train_dataset[1]["input_ids"]),args.global_rank)
 
-    eval_batch = eval_data_collator([eval_dataset[i] for i in range(2)])
+    eval_batch = chinese_eval_data_collator([chinese_eval_dataset[i] for i in range(2)])
     print_rank_0(eval_batch,  args.global_rank)
-    print_rank_0(tokenizer.decode(eval_dataset[0]["input_ids"]),args.global_rank)
-    print_rank_0(tokenizer.decode(eval_dataset[1]["input_ids"]),args.global_rank)
+    print_rank_0(tokenizer.decode(chinese_eval_dataset[0]["input_ids"]),args.global_rank)
+    print_rank_0(tokenizer.decode(chinese_eval_dataset[1]["input_ids"]),args.global_rank)
 
+
+    english_eval_dataset = MyDataset(data_prefix=args.english_test_data_path, seq_length=args.max_seq_len, pad_id=tokenizer.eos_token_id)
+    english_eval_data_collator =MyDataCollatorForSupervisedDataset(pad_token_id=tokenizer.eos_token_id,max_seq_len=args.max_seq_len)
+    
+    english_eval_batch = english_eval_data_collator([english_eval_dataset[i] for i in range(2)])
+    print_rank_0(english_eval_batch,  args.global_rank)
+    print_rank_0(tokenizer.decode(english_eval_dataset[0]["input_ids"]),args.global_rank)
+    print_rank_0(tokenizer.decode(english_eval_dataset[1]["input_ids"]),args.global_rank)
 
     print_rank_0('len_train_sample:{}'.format(len(train_dataset)), args.global_rank)
-    print_rank_0('len_eval_sample:{}'.format(len(eval_dataset)),  args.global_rank)
+    print_rank_0('len_chinese_eval_sample:{}'.format(len(chinese_eval_dataset)),  args.global_rank)
+    print_rank_0('len_english_eval_sample:{}'.format(len(english_eval_dataset)),  args.global_rank)
 
     if args.local_rank == -1:
         train_sampler = RandomSampler(train_dataset)
-        eval_sampler = SequentialSampler(eval_dataset)
+        chinese_eval_sampler = SequentialSampler(chinese_eval_dataset)
+        english_eval_sampler = SequentialSampler(english_eval_dataset)
     else:
         train_sampler = DistributedSampler(train_dataset)
-        eval_sampler = DistributedSampler(eval_dataset)
+        chinese_eval_sampler = DistributedSampler(chinese_eval_dataset)
+        english_eval_sampler = DistributedSampler(english_eval_dataset)
+
+    
     train_dataloader = DataLoader(train_dataset,
                                   collate_fn=train_data_collator,
                                   sampler=train_sampler,
                                   batch_size=args.per_device_train_batch_size)
-    eval_dataloader = DataLoader(eval_dataset,
-                                 collate_fn=eval_data_collator,
-                                 sampler=eval_sampler,
+    chinese_eval_dataloader = DataLoader(chinese_eval_dataset,
+                                 collate_fn=chinese_eval_data_collator,
+                                 sampler=chinese_eval_sampler,
+                                 batch_size=args.per_device_eval_batch_size)
+    english_eval_dataloader = DataLoader(english_eval_dataset,
+                                 collate_fn=english_eval_data_collator,
+                                 sampler=english_eval_sampler,
                                  batch_size=args.per_device_eval_batch_size)
     
 
@@ -445,7 +474,7 @@ def main():
    
     training_step_losses = []
     batch_size =(args.total_cards*args.per_device_train_batch_size)
-    save_samples = [10000,100000]
+    save_samples = [2000,5000, 10000, 20000, 50000, 200000]
     save_steps = [math.ceil(samples/batch_size) for samples in save_samples]
     save_dict = dict(zip(save_steps,save_samples))
     print_rank_0(
@@ -460,13 +489,56 @@ def main():
     if hasattr(torch.cuda, 'empty_cache'):
         torch.cuda.empty_cache()
 
+
+    # 初始化讲区域内参数置0
+    saved_weights = {}
+    freeze_tensor_bool = {}
+    with torch.no_grad():
+        for name, param in model.named_parameters():
+            if 'layers.' not in name or 'norm' in name:
+                continue
+            save_path = '{}/{}.pt'.format(args.region_dir,name.replace('module.',''))
+            weight_to_freeze = torch.load(save_path).bool()
+            freeze_tensor_bool[name] = weight_to_freeze
+            print_rank_0(name,args.global_rank)
+            freeze_tensor_bool[name].requires_grad=False
+        freeze_tensor_bool = to_device(freeze_tensor_bool,device)
+    
+    with torch.no_grad():
+        for name, param in model.named_parameters():
+            if 'layers.' not in name or 'norm' in name:
+                continue
+            else:
+                param_clone = param.clone()
+                # 如果仅要冻结区域并且置0，取消注释下面的这行代码即可
+                # param_clone.mul_(0)
+            
+            saved_weights[name] = freeze_tensor_bool[name] * param_clone
+            saved_weights[name].requires_grad=False
+            weight_to_freeze = freeze_tensor_bool[name]
+            param.mul_(~weight_to_freeze)
+            param.add_(saved_weights[name].data)
+
+        saved_weights = to_device(saved_weights,device)
+    
+
+    print_rank_0(
+            f"***** Evaluating perplexity on Chinese begin *****",
+            args.global_rank)
+    perplexity = evaluation(model, chinese_eval_dataloader)
+    print_rank_0(f"ppl on Chinese step 0: {perplexity}", args.global_rank)
+
+    print_rank_0(
+            f"***** Evaluating perplexity on English begin *****",
+            args.global_rank)
+    perplexity = evaluation(model, english_eval_dataloader)
+    print_rank_0(f"ppl on English step 0: {perplexity}", args.global_rank)
+
+    if hasattr(torch.cuda, 'empty_cache'):
+        torch.cuda.empty_cache()
+
     
     print_rank_0("***** Running training *****", args.global_rank)
-    print_rank_0(
-        f"***** Evaluating perplexity, Epoch {0}/{args.num_train_epochs} *****",
-        args.global_rank)
-    perplexity = evaluation(model, eval_dataloader)
-    print_rank_0(f"ppl: {perplexity}", args.global_rank)
 
     if hasattr(torch.cuda, 'empty_cache'):
         torch.cuda.empty_cache()
@@ -481,9 +553,19 @@ def main():
             batch = to_device(batch, device)
             outputs = model(**batch, use_cache=False)
             loss = outputs.loss
-            # 只进行梯度累积
+            
             model.backward(loss)
-            # model.step()
+            model.step()
+
+            for name, param in model.named_parameters():
+                if 'layers.' not in name or 'norm' in name:
+                    continue
+                
+                with torch.no_grad():
+                    weight_to_freeze = freeze_tensor_bool[name]
+                    param.mul_(~weight_to_freeze)
+                    param.add_(saved_weights[name].data)
+                    # print_rank_0((param == saved_weights[name]).sum(),args.local_rank)
 
             if step % 100 == 0:
                 print_rank_0(
@@ -492,36 +574,22 @@ def main():
             if (step+1) in save_steps:
                     
                 print_rank_0(
-                    f"***** Evaluating perplexity, Epoch {epoch+1}/{args.num_train_epochs} *****",
+                    f"***** Evaluating perplexity on Chinese, Epoch {epoch+1}/{args.num_train_epochs} *****",
                     args.global_rank)
-                perplexity = evaluation(model, eval_dataloader)
-                print_rank_0(f"ppl {save_dict[step + 1]}: {perplexity}", args.global_rank)
                 
-                for n, lp in model.named_parameters():
-                    # # 1. gradient lookup
-                    # For zero1 and zero2, gradient lookup must be called after `backward` and before `step`
-                    # For zero3, gradient lookup must be called after `backward`
-                    hp_grad = safe_get_full_grad(lp)
-                    print_rank_0(n,args.global_rank)
-                    print_rank_0(hp_grad,args.global_rank)
+                perplexity = evaluation(model, chinese_eval_dataloader)
+                print_rank_0(f"training sample: {save_dict[step + 1]} ppl on Chinese : {perplexity}", args.global_rank)
 
-                    # # 2. fp32 and optim states can probably be called anywhere in the training loop, but will be updated after `step`
-                    # hp = safe_get_full_fp32_param(lp)
-                    # exp_avg = safe_get_full_optimizer_state(lp, "exp_avg")
-                    # exp_avg_sq = safe_get_full_optimizer_state(lp, "exp_avg_sq")
-                    
-                    save_dir = os.path.join(args.output_dir, 'grad-mul-param_checkpoint_{}'.format(save_dict[step + 1]))
-                    os.makedirs(save_dir,exist_ok=True)
-                    save_path = os.path.join(save_dir, '{}.pt'.format(n.replace('module.','')))
-                    
-                    # 使用torch.save()保存张量到文件
-                    grad_mul_param_tensor = torch.mul(hp_grad,lp)
-                    torch.save(grad_mul_param_tensor.bfloat16(), save_path)
+                print_rank_0(
+                    f"***** Evaluating perplexity on English, Epoch {epoch+1}/{args.num_train_epochs} *****",
+                    args.global_rank)
+                perplexity = evaluation(model, english_eval_dataloader)
+                print_rank_0(f"training sample: {save_dict[step + 1]} ppl on English : {perplexity}", args.global_rank)
 
                 if hasattr(torch.cuda, 'empty_cache'):
                     torch.cuda.empty_cache()
                 
-                if save_dict[step + 1] == 100000:
+                if save_dict[step + 1] == 200000:
                     break
                 
 
